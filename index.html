@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Ruddee — Is All About Creativity and Design</title>
+  <meta name="description" content="Ruddee is a creative studio for website design, graphic design and branding." />
+  <link rel="icon" type="image/png" href="assets/logo.png" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <!-- Nav -->
+  <header class="nav">
+    <div class="container nav-inner">
+      <a href="#home" class="brand"><img src="assets/logo.png" alt="Ruddee logo" /></a>
+      <nav class="nav-links" id="navLinks">
+        <a href="#home" class="active">Home</a>
+        <a href="#websites">Website Design</a>
+        <a href="#graphic">Graphic Design</a>
+        <a href="#branding">Branding</a>
+        <a href="#contact">Contact</a>
+      </nav>
+      <a href="#contact" class="btn btn-solid nav-cta">Let's Talk <span class="arrow">→</span></a>
+      <button class="hamburger" id="hamburger" aria-label="Menu"><span></span><span></span><span></span></button>
+    </div>
+  </header>
+
+  <!-- Hero -->
+  <section class="hero" id="home">
+    <div class="hero-bg"></div>
+    <div class="hero-shape"></div>
+    <div class="hero-dots hero-dots-tr"></div>
+    <div class="hero-dots hero-dots-bl"></div>
+    <div class="container hero-inner">
+      <div class="hero-text">
+        <p class="eyebrow">HI, I'M JAMES MICHAEL — RUDDEE CREATIVE STUDIO</p>
+        <h1>DESIGNING<br/>BOLD <span class="accent">BRANDS</span><br/>&amp; <span class="accent">WEBSITES</span></h1>
+        <div class="hero-divider"></div>
+        <p class="hero-sub">I'm James Michael, a creative designer helping businesses stand out with powerful branding, graphic design and high-performing websites that leave a lasting impression.</p>
+        <div class="hero-actions">
+          <a href="#websites" class="btn btn-solid">View My Work <span class="arrow">→</span></a>
+          <a href="#contact" class="btn btn-ghost">Get a Quote <span class="arrow">→</span></a>
+        </div>
+      </div>
+      <div class="hero-visual">
+        <img src="assets/my.png" alt="James Michael" />
+        <span class="hero-name-tag">James Michael</span>
+      </div>
+    </div>
+
+    <!-- Services Card -->
+    <div class="container services-wrap">
+      <div class="services-card services-3">
+        <a href="#websites" class="service">
+          <div class="service-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="4" width="20" height="14" rx="2"/><path d="M8 21h8M12 18v3"/></svg>
+          </div>
+          <div><h3>Website Design</h3><p>Modern, responsive websites built to engage and convert.</p></div>
+        </a>
+        <a href="#graphic" class="service">
+          <div class="service-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 1 1 3 3L7 19l-4 1 1-4 12.5-12.5z"/></svg>
+          </div>
+          <div><h3>Graphic Design</h3><p>Creative visuals that communicate your brand.</p></div>
+        </a>
+        <a href="#branding" class="service">
+          <div class="service-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>
+          </div>
+          <div><h3>Branding</h3><p>Strong brand identities that leave a mark.</p></div>
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <!-- Stats -->
+  <section class="stats">
+    <div class="container stats-grid">
+      <div class="stat"><strong>120+</strong><span>Projects Delivered</span></div>
+      <div class="stat"><strong>80+</strong><span>Happy Clients</span></div>
+      <div class="stat"><strong>5+</strong><span>Years Experience</span></div>
+      <div class="stat"><strong>100%</strong><span>Creative Passion</span></div>
+    </div>
+  </section>
+
+  <!-- Website Design -->
+  <section class="section" id="websites">
+    <div class="container">
+      <div class="section-head">
+        <span class="pill">Website Design</span>
+        <h2>Websites that work as good as they look</h2>
+        <p>Responsive, fast and beautiful websites. Click any project to view it live.</p>
+      </div>
+      <div class="grid grid-cards" id="websiteGrid"></div>
+    </div>
+  </section>
+
+  <!-- Graphic Design -->
+  <section class="section section-alt" id="graphic">
+    <div class="container">
+      <div class="section-head">
+        <span class="pill">Graphic Design</span>
+        <h2>Visuals with personality</h2>
+        <p>Flyers, posters, social media and more. Tap an image to enlarge.</p>
+      </div>
+      <div class="grid grid-tiles" id="graphicGrid"></div>
+    </div>
+  </section>
+
+  <!-- Branding -->
+  <section class="section" id="branding">
+    <div class="container">
+      <div class="section-head">
+        <span class="pill">Branding</span>
+        <h2>Identities that get remembered</h2>
+        <p>Logos and complete brand systems. Tap an image to enlarge.</p>
+      </div>
+      <div class="grid grid-tiles" id="brandGrid"></div>
+    </div>
+  </section>
+
+  <!-- Contact -->
+  <section class="section section-alt" id="contact">
+    <div class="container">
+      <div class="contact-card">
+        <div>
+          <h2>Let's create something great</h2>
+          <p>Have a project or just want to say hi? Reach out and let's bring your idea to life.</p>
+        </div>
+        <div class="contact-links">
+          <a href="mailto:michaelruddy440@gmail.com" class="btn btn-solid">Email Me</a>
+          <a href="https://wa.me/2348147291376" class="btn btn-ghost">WhatsApp</a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <footer class="footer">
+    <div class="container footer-inner">
+      <img src="assets/logo.png" alt="Ruddee" class="footer-logo" />
+      <p>Is all about creativity and design.</p>
+      <p class="copy">© <span id="year"></span> Ruddee. All rights reserved.</p>
+    </div>
+  </footer>
+
+  <div class="lightbox" id="lightbox">
+    <button class="lightbox-close" id="lightboxClose" aria-label="Close">&times;</button>
+    <img id="lightboxImg" src="" alt="" />
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>

@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>Pre-student Portal — Ondo City Polytechnic</title>
+<link rel="icon" href="assets/logo.png"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css"/>
+</head><body>
+<header class="nav"><div class="nav-inner">
+<a class="brand" href="index.html"><img src="assets/logo.png" alt="OCPOTECH"/>
+<div><div class="b-name">ONDO CITY POLYTECHNIC <span style="font-size:10px;color:#15532a">(OCPOTECH)</span></div><div class="b-tag">STRENGTHEN THE TECHNOLOGY</div></div></a>
+<nav class="nav-links">
+<a href="index.html">Home</a><a href="screening.html">Admissions</a><a href="returning.html">Student Portal</a>
+<a href="parttime.html">Part-Time</a><a href="gallery.html">Gallery</a>
+<a href="about.html">Contact</a><a href="dashboard.html">Notices</a>
+</nav>
+<div class="nav-actions" data-nav-auth><a href="login.html" class="btn btn-ghost">Sign In</a><a href="signup.html" class="btn btn-primary">Apply Now</a><button class="menu-toggle" aria-label="Menu">☰</button></div>
+</div></header>
+
+<section class="subhero"><div class="subhero-inner">
+<span class="chip"><span class="dot"></span> 2026/2027 Session — Pre-students</span>
+<h1>Pre-student Portal</h1>
+<p>Check your admission status with your JAMB Number, pay the ₦30,000 acceptance fee, and complete your bio data.</p>
+</div></section>
+
+<section class="section">
+<div class="panel" style="background:#fff;border:1px solid var(--border);border-radius:14px;padding:24px;box-shadow:var(--shadow);max-width:760px;margin:0 auto">
+  <h2 style="margin:0 0 6px">Admission Status Checker</h2>
+  <p class="sub" style="color:var(--muted);margin:0 0 14px">Enter the JAMB Registration Number you used during screening.</p>
+  <form id="admForm" style="display:flex;gap:10px;flex-wrap:wrap">
+    <input name="jamb" placeholder="JAMB Reg. No." required style="flex:1;min-width:240px;padding:12px;border:1px solid var(--border);border-radius:10px"/>
+    <button class="btn btn-primary" type="submit">Check Admission →</button>
+  </form>
+  <div id="admResult" style="margin-top:18px"></div>
+</div>
+</section>
+
+<footer class="footer"><div class="footer-inner">
+<div><a class="brand" href="index.html"><img src="assets/logo.png" alt="OCPOTECH" style="width:36px;height:36px;border-radius:50%;background:#fff"/>
+<div><div class="b-name" style="color:#fff">ONDO CITY POLYTECHNIC</div><div class="b-tag">STRENGTHEN THE TECHNOLOGY</div></div></a></div>
+<div><h4>Admissions</h4><a href="screening.html">Screening</a><a href="parttime.html">Part-Time</a><a href="fresh-student.html">Pre-students</a></div>
+<div><h4>Students</h4><a href="login.html">Sign In</a><a href="returning.html">Returning</a><a href="gallery.html">Gallery</a></div>
+<div><h4>Contact</h4><a href="mailto:registrarofocpotech@gmail.com">registrarofocpotech@gmail.com</a><a href="tel:+2348066478440">08066478440, 08158941068, 08137968539</a></div>
+</div><div class="copy"><span>© Ondo City Polytechnic.</span><span>Strengthen the Technology</span></div></footer>
+
+<script src="https://checkout.flutterwave.com/v3.js"></script>
+<script src="app.js"></script>
+<script src="script.js"></script>
+<script>
+function render(scr){
+  const box = document.getElementById("admResult");
+  if(!scr){ box.innerHTML = `<div class="alert" style="background:#fff3f3;border:1px solid #f3c2c2;padding:14px;border-radius:10px">No screening record found for that JAMB Number. Please complete <a href="screening.html">Pre-Admission Screening</a> first.</div>`; return; }
+  const admitted = scr.status==="Admitted" || scr.status==="Active";
+  const paid = (DB.payments||[]).some(p=>p.feeKey==="acceptance" && p.status==="paid" && (p.meta?.scrId===scr.id || p.studentName===scr.name));
+  box.innerHTML = `
+    <div style="background:#f4f7f4;border:1px solid var(--border);border-radius:12px;padding:18px">
+      <div style="display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px">
+        <div><strong>${scr.name}</strong><div class="sub" style="color:var(--muted)">JAMB: ${scr.jamb} · ${scr.course||"-"}</div></div>
+        <span class="badge ${admitted?'badge-active':'badge-ongoing'}">${admitted?'Admitted':scr.status}</span>
+      </div>
+      ${admitted ? (paid
+        ? `<div style="margin-top:14px"><span class="badge badge-active">Acceptance Fee Paid</span>
+            <p style="margin:10px 0">Next step: complete your <a href="bio-data.html">Post-Admission Bio Data</a> and proceed to <a href="courses.html">Course Registration</a>.</p>
+            <p>Matric will be assigned by admin shortly.</p></div>`
+        : (()=>{ const bd = acceptanceBreakdown(scr.faculty || facultyOfProgramme(scr.course)); return `<div style="margin-top:14px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px">
+            <div><strong>Acceptance Fee:</strong> ₦${bd.total.toLocaleString()}${bd.instrument?` <span style="color:var(--muted);font-size:12px">(₦${bd.acceptance.toLocaleString()} acceptance + ₦${bd.instrument.toLocaleString()} ${bd.label.toLowerCase()})</span>`:''}</div>
+            <button id="payAcc" class="btn btn-green">Pay Acceptance Fee →</button>
+           </div>`; })())
+        : `<p style="margin-top:12px">Your screening is still <strong>${scr.status}</strong>. Please check back after the admission list is released.</p>`}
+    </div>`;
+  try { startAdmissionPolling(scr.id); } catch(_){}
+  const pa = document.getElementById("payAcc");
+  if(pa) pa.onclick = ()=>{
+    const bd = acceptanceBreakdown(scr.faculty || facultyOfProgramme(scr.course));
+    pay({
+      feeKey:"acceptance",
+      customAmount: bd.total,
+      customLabel: bd.instrument ? ("Acceptance Fee + "+bd.label) : "Acceptance Fee",
+      customerOverride:{ email:scr.email, name:scr.name },
+      onSuccess: (rec)=>{
+        rec.meta = { scrId: scr.id };
+        const all = DB.payments; const i = all.findIndex(x=>x.id===rec.id); if(i>=0){ all[i]=rec; DB.payments=all; }
+        toast("Acceptance fee paid. Generating receipt…");
+        setTimeout(()=>printInvoice(rec), 400);
+        setTimeout(()=>render(scr), 800);
+      }
+    });
+  };
+}
+
+document.getElementById("admForm").addEventListener("submit",(e)=>{
+  e.preventDefault();
+  const jamb = e.target.jamb.value.trim().toUpperCase();
+  const scr = (DB.screenings||[]).find(s=>(s.jamb||"").toUpperCase()===jamb);
+  render(scr);
+});
+</script>
+</body></html>

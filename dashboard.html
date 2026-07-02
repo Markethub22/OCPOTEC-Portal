@@ -1,0 +1,543 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>Dashboard — Ondo City Polytechnic</title>
+<link rel="icon" href="assets/logo.png"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css"/>
+</head><body>
+<header class="nav"><div class="nav-inner">
+<a class="brand" href="index.html"><img src="assets/logo.png" alt="OCPOTECH"/>
+<div><div class="b-name">ONDO CITY POLYTECHNIC <span style="font-size:10px;color:#15532a">(OCPOTECH)</span></div><div class="b-tag">STUDENT PORTAL</div></div></a>
+<nav class="nav-links">
+  <a href="index.html">Home</a>
+  <a href="dashboard.html" class="active">Dashboard</a>
+  <a href="about.html">About</a>
+</nav>
+<div class="nav-actions" data-nav-auth></div>
+</div></header>
+
+<div class="dash">
+  <aside class="dash-side">
+    <div class="who">
+      <div class="avatar" id="avatar">U</div>
+      <div><div class="nm" id="userName">Loading…</div><div class="rl" id="userRole"></div></div>
+    </div>
+    <div id="sideNav"></div>
+    <button class="lnk" style="color:#b91c1c;margin-top:8px" onclick="Auth.logout()">↩ Sign out</button>
+  </aside>
+  <main class="dash-main" id="main"></main>
+</div>
+
+<script src="https://checkout.flutterwave.com/v3.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="app.js"></script>
+<script src="script.js"></script>
+<script>
+const me = Auth.require();
+if(me){
+  if(me.role==="admin"){ location.replace("admin.html"); }
+  const safeName = (me.name||me.email||"Student").toString();
+  document.getElementById("userName").textContent = safeName;
+  document.getElementById("userRole").textContent = me.role + (me.matric?(" • "+me.matric):"");
+  document.getElementById("avatar").textContent = safeName.trim()[0].toUpperCase();
+  render();
+}
+
+function isPartTime(u){
+  if(!u) return false;
+  if(u.appNo && /^PT-/i.test(u.appNo)) return true;
+  if(u.profile && /part/i.test(u.profile.mode||"")) return true;
+  if(/part/i.test(u.mode||"")) return true;
+  return false;
+}
+
+// Safe fee lookups — guard against missing FEES keys (e.g. school_fee is computed per-faculty, not in FEES)
+function feeAmt(key, fallback){
+  try { return (FEES && FEES[key] && typeof FEES[key].amount === 'number') ? FEES[key].amount : (fallback||0); }
+  catch(e){ return fallback||0; }
+}
+function mySchoolFee(){
+  try {
+    const amt = (typeof schoolFeeTotal === 'function') ? schoolFeeTotal(me) : 0;
+    return amt || 0;
+  } catch(e){ return 0; }
+}
+
+function quickLinks(){
+  return `<section class="panel"><h2>Quick Links</h2>
+    <div class="dash-grid">
+      <div class="dash"><div class="icn">📝</div><h3>Bio Data</h3><p>Update / print your student profile.</p><a href="bio-data.html">Open →</a></div>
+      <div class="dash"><div class="icn">📚</div><h3>Course Registration</h3><p>Register courses for the session.</p><a href="courses.html">Open →</a></div>
+      <div class="dash"><div class="icn">💰</div><h3>Fees & Invoices</h3><p>Pay invoices, print receipts.</p><a href="fees.html">Open →</a></div>
+      <div class="dash"><div class="icn">🖼</div><h3>Gallery</h3><p>School photos & anthem.</p><a href="gallery.html">Open →</a></div>
+    </div></section>
+    <section class="panel"><h2>Notice Board</h2>
+      ${(DB.notices||[]).length?DB.notices.map(n=>`<div style="padding:10px 0;border-bottom:1px solid var(--border)"><strong>${n.title}</strong><div style="color:var(--muted);font-size:12px">${new Date(n.at).toLocaleDateString()}</div><p style="margin:6px 0 0">${n.body}</p></div>`).join(""):'<p class="sub">No notices yet.</p>'}
+    </section>`;
+}
+
+function render(){
+  const main = document.getElementById("main");
+  const side = document.getElementById("sideNav");
+  try {
+    if(me.role==="admin") return renderAdmin(main, side);
+    if(me.role==="applicant") return renderApplicant(main, side);
+    if(me.role==="applicant_screening") return renderApplicantScreening(main, side);
+    if(me.role==="fresh") return isPartTime(me) ? renderPartTime(main, side) : renderFresh(main, side);
+    if(me.role==="returning") return isPartTime(me) ? renderPartTime(main, side) : renderReturning(main, side);
+    if(me.role==="staff") return renderStaff(main, side);
+    renderApplicantScreening(main, side);
+  } catch(err){
+    console.error(err);
+    main.innerHTML = `<section class="panel"><h2>Welcome ${me.name||""}</h2><p class="sub">We hit an issue loading your portal. Please refresh, or sign out and back in.</p><pre style="white-space:pre-wrap;color:#b91c1c;font-size:12px">${(err&&err.message)||err}</pre></section>`+quickLinks();
+  }
+}
+
+function renderApplicantScreening(main, side){
+  side.innerHTML = `<a class="active" href="#">Admission Status</a>`;
+  const scr = (DB.screenings||[]).find(s=>s.id===me.scrId) || {};
+  const status = scr.status || me.status || "Submitted - Pending Review";
+  const admitted = /admitted/i.test(status) && !/not admitted/i.test(status);
+  const declined = /not admitted/i.test(status);
+  const pt = isPartTime(me) || /^PT-/i.test(scr.id||"");
+  main.innerHTML = `
+    <section class="panel">
+      <h2>Welcome ${me.name||"Student"}</h2>
+      <div class="sub">${pt?"Part-Time":"Full-Time"} Application • ${pt?("App No: <strong>"+(me.appNo||scr.id||"—")+"</strong>"):("JAMB No: <strong>"+(me.jamb||scr.jamb||"—")+"</strong>")}</div>
+      <div class="kv" style="margin-top:14px">
+        <div class="item"><div class="k">Programme</div><div class="v">${scr.course||me.course||"—"}</div></div>
+        <div class="item"><div class="k">Status</div><div class="v"><span class="status-pill status-${admitted?'paid':declined?'fail':'pending'}">${status.toUpperCase()}</span></div></div>
+        ${declined?`<div class="item"><div class="k">Reason</div><div class="v">${scr.declineReason||"Not stated."}</div></div>`:''}
+      </div>
+      ${admitted?`<p style="margin-top:14px">Your admission has been approved. Please refresh — your dashboard will switch to the student portal automatically once the system links your account.</p>`
+        :declined?`<p style="margin-top:14px">Unfortunately your application was not successful this session. You may re-apply next session.</p>`
+        :`<p style="margin-top:14px">Your application is currently under review. Please check back later.</p>`}
+    </section>
+    ${quickLinks()}`;
+}
+
+function renderPartTime(main, side){
+  side.innerHTML = `<a class="active" href="#">Part-Time Portal</a>`;
+  const acc = hasPaid(me.id,"acceptance");
+  const info = paymentListFor(me);
+  const _s = DB.settings; const _bio = DB.biodata[me.id]||{};
+  const semKey = info.isPerSemester
+    ? ("semester_fee_"+(_s.session||"").replace(/\W+/g,"_")+"_"+((_bio.semester||"HARMATTAN").toLowerCase()))
+    : "school_fee";
+  const sch = hasPaid(me.id, semKey);
+  const feeLabel = info.isPerSemester ? "Semester Fees" : "School Fees";
+  main.innerHTML = `
+    ${lateFeeNoticeHTML(me)}
+    <section class="panel">
+      <h2>Part-Time Student Portal</h2>
+      <div class="sub">Welcome ${me.name}. ${me.matric?("Matric No: <strong>"+me.matric+"</strong>"):"Complete onboarding to activate your matric number."}</div>
+      <div class="kv">
+        <div class="item"><div class="k">Programme</div><div class="v">${me.course||"—"}</div></div>
+        <div class="item"><div class="k">Mode</div><div class="v">Part-Time</div></div>
+        <div class="item"><div class="k">Session / Semester</div><div class="v">${_s.session||"—"} · ${(_bio.semester||"HARMATTAN").toUpperCase()}</div></div>
+        <div class="item"><div class="k">Acceptance Fee</div><div class="v">₦${acceptanceTotalFor(me).toLocaleString()} ${acc?paidPill():pendingPill()}</div></div>
+        <div class="item" style="cursor:pointer" title="Click to view payment list" onclick="openSchoolFeePopup(Auth.current())"><div class="k">${feeLabel} ▸</div><div class="v">₦${info.total.toLocaleString()} ${sch?paidPill():pendingPill()}</div></div>
+      </div>
+      <div style="margin-top:8px;padding:10px 12px;background:#f5f9f6;border-left:3px solid #15532a;border-radius:6px;font-size:13px">
+        <strong>${feeLabel} breakdown:</strong>
+        ${info.fees.map(f=>`<div>• ${f[0]} — ₦${f[1].toLocaleString()}</div>`).join("")}
+      </div>
+      <div style="margin-top:18px;display:flex;gap:10px;flex-wrap:wrap">
+        ${acc?'':payBtn('acceptance','Acceptance Fee')}
+        ${acc&&!sch?`<button class="btn btn-green" onclick="openSchoolFeePopup(Auth.current())">💰 Pay ${feeLabel} (₦${info.total.toLocaleString()})</button>`:''}
+        ${acc&&sch?`<span class="status-pill status-paid">${feeLabel} paid ✓</span>`:''}
+      </div>
+    </section>
+    <section class="panel">
+      <h2>Admission Documents</h2>
+      ${acc?`<p>Your admission documents are unlocked.</p>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px">
+          <button class="btn btn-green" onclick="printAdmissionLetter(Auth.current())">🎓 Admission Letter</button>
+          <button class="btn btn-ghost" onclick="printAcceptanceLetter(Auth.current())">✍️ Acceptance Letter</button>
+          <button class="btn btn-ghost" onclick="printGuarantorForm(Auth.current())">🤝 Guarantor Form</button>
+          <button class="btn btn-ghost" onclick="printPaymentList(Auth.current())">💳 Payment List</button>
+          <button class="btn btn-ghost" onclick="printBioData(Auth.current(), DB.biodata[Auth.current().id]||{})">📋 Bio Data</button>
+        </div>`
+        :'<p class="sub">Pay the acceptance fee to unlock your admission letter, acceptance letter, guarantor form and payment list.</p>'}
+    </section>
+
+    <section class="panel">
+      <h2>Course Registration</h2>
+      ${sch
+        ? `<p>Register your courses for the current semester, then print your course form.</p>
+           <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px">
+             <a class="btn btn-green" href="courses.html">📚 Register Courses</a>
+             <button class="btn btn-ghost" type="button" onclick="(function(){const r=(DB.registrations||[]).find(r=>r.userId===me.id&&r.session===DB.settings.session); if(!r){toast('Register your courses first.');return;} const cs=r.courseIds.map(id=>DB.courses.find(c=>c.id===id)).filter(Boolean); printCourseForm(me, cs);})()">🖨 Print Course Form</button>
+           </div>`
+        : '<p class="sub">Course registration unlocks once your School Fees payment is confirmed.</p>'}
+    </section>
+
+    <section class="panel"><h2>Payment History</h2>
+      <table class="tbl"><thead><tr><th>Date</th><th>Description</th><th>Amount</th><th>Status</th></tr></thead>
+      <tbody>${userPayments(me.id).map(p=>`<tr><td>${new Date(p.date).toLocaleString()}</td><td>${p.label}</td><td>₦${p.amount.toLocaleString()}</td><td><span class="status-pill status-${p.status==='paid'?'paid':p.status==='pending'?'pending':'fail'}">${p.status.toUpperCase()}</span></td></tr>`).join('')||'<tr><td colspan="4" style="text-align:center;color:var(--muted);padding:24px">No payments yet.</td></tr>'}</tbody></table>
+    </section>
+    ${quickLinks()}`;
+}
+
+function payBtn(feeKey, label){
+  if(feeKey==='acceptance'){
+    const bd = acceptanceBreakdown(facultyOfUser(me));
+    const lbl = bd.instrument ? ('Acceptance Fee + '+bd.label) : 'Acceptance Fee';
+    return `<button class="btn btn-green" onclick="pay({feeKey:'acceptance',customAmount:${bd.total},customLabel:'${lbl}',onSuccess:()=>{toast('Payment successful!');setTimeout(()=>location.reload(),800);}})">Pay ${label} (₦${bd.total.toLocaleString()}) →</button>`;
+  }
+  if(feeKey==='school_fee'){
+    return `<button class="btn btn-green" onclick="openSchoolFeePopup(Auth.current())">Pay ${label} (₦${mySchoolFee().toLocaleString()}) →</button>`;
+  }
+  return `<button class="btn btn-green" onclick="pay({feeKey:'${feeKey}',onSuccess:()=>{toast('Payment successful!');setTimeout(()=>location.reload(),800);}})">Pay ${label} →</button>`;
+}
+
+function paidPill(){return '<span class="status-pill status-paid">PAID</span>';}
+function pendingPill(){return '<span class="status-pill status-pending">PENDING</span>';}
+
+function renderApplicant(main,side){
+  side.innerHTML = `<a class="active" href="#">Application</a><a href="#" onclick="document.getElementById('payments').scrollIntoView();return false">Payments</a><a href="#" onclick="document.getElementById('profile').scrollIntoView();return false">Profile</a>`;
+  const paid = hasPaid(me.id,"post_utme");
+  const apps = DB.applications.filter(a=>a.userId===me.id);
+  const app = apps[0];
+  main.innerHTML = `
+    <section class="panel">
+      <h2>Post-UTME Screening — 2026/2027</h2>
+      <div class="sub">Welcome ${me.name}. Complete the steps below to finalize your application.</div>
+      <div class="kv">
+        <div class="item"><div class="k">Step 1 — Pay Screening Fee</div><div class="v">₦${feeAmt('post_utme',3250).toLocaleString()} ${paid?paidPill():pendingPill()}</div></div>
+        <div class="item"><div class="k">Step 2 — Submit Application</div><div class="v">${app?paidPill():pendingPill()}</div></div>
+      </div>
+      <div style="margin-top:18px">${paid?'':payBtn('post_utme','Screening Fee')}</div>
+    </section>
+
+    ${paid ? `<section class="panel">
+      <h2>Application Form</h2>
+      <div class="sub">Fill all fields. You can edit until exam day.</div>
+      <form id="appForm">
+        <div class="field-row">
+          <div><label>JAMB Reg. No.</label><input name="jamb" required value="${app?.jamb||''}"/></div>
+          <div><label>JAMB Score</label><input name="score" type="number" required value="${app?.score||''}"/></div>
+        </div>
+        <div class="field-row">
+          <div><label>1st Choice Programme</label>
+            <select name="course" required>
+              <option value="">Select…</option>
+              <option ${app?.course==='Computer Science'?'selected':''}>Computer Science</option>
+              <option ${app?.course==='Accountancy'?'selected':''}>Accountancy</option>
+              <option ${app?.course==='Business Admin'?'selected':''}>Business Admin</option>
+              <option ${app?.course==='Mass Communication'?'selected':''}>Mass Communication</option>
+              <option ${app?.course==='Electrical Engineering'?'selected':''}>Electrical Engineering</option>
+            </select>
+          </div>
+          <div><label>State of Origin</label><input name="state" required value="${app?.state||''}"/></div>
+        </div>
+        <div class="field-row">
+          <div><label>Phone</label><input name="phone" required value="${app?.phone||''}"/></div>
+          <div><label>Date of Birth</label><input name="dob" type="date" required value="${app?.dob||''}"/></div>
+        </div>
+        <button class="btn btn-green" type="submit" style="margin-top:14px">${app?'Update Application':'Submit Application'}</button>
+      </form>
+    </section>`:''}
+
+    <section class="panel" id="payments">
+      <h2>Payment History</h2>
+      <table class="tbl"><thead><tr><th>Date</th><th>Description</th><th>Amount</th><th>Ref</th><th>Status</th></tr></thead>
+      <tbody>${userPayments(me.id).map(p=>`<tr><td>${new Date(p.date).toLocaleString()}</td><td>${p.label}</td><td>₦${p.amount.toLocaleString()}</td><td style="font-family:monospace;font-size:12px">${p.tx_ref}</td><td><span class="status-pill status-${p.status==='paid'?'paid':'fail'}">${p.status.toUpperCase()}</span></td></tr>`).join('')||'<tr><td colspan="5" style="text-align:center;color:var(--muted);padding:24px">No payments yet.</td></tr>'}</tbody></table>
+    </section>
+  `;
+  const f = document.getElementById("appForm");
+  if(f) f.addEventListener("submit",e=>{
+    e.preventDefault();
+    const data = Object.fromEntries(new FormData(f));
+    const apps = DB.applications.filter(a=>a.userId!==me.id);
+    apps.push({id:"a_"+Date.now(),userId:me.id,...data,submittedAt:Date.now()});
+    DB.applications = apps;
+    toast("Application saved!");
+    setTimeout(()=>location.reload(),700);
+  });
+}
+
+function renderFresh(main,side){
+  side.innerHTML = `<a class="active" href="#">Onboarding</a>`;
+  const acc = hasPaid(me.id,"acceptance");
+  const sch = hasPaid(me.id,"school_fee");
+  main.innerHTML = `
+    ${lateFeeNoticeHTML(me)}
+    <section class="panel">
+      <h2>Pre-student Portal</h2>
+      <div class="sub">Welcome ${me.name}. Complete onboarding to activate your matric number.</div>
+      <div class="kv">
+        <div class="item"><div class="k">Acceptance Fee</div><div class="v">₦${acceptanceTotalFor(me).toLocaleString()} ${acc?paidPill():pendingPill()}</div></div>
+        <div class="item" style="cursor:pointer" title="Click to view payment list" onclick="openSchoolFeePopup(Auth.current())"><div class="k">School Fees ▸</div><div class="v">₦${mySchoolFee().toLocaleString()} ${sch?paidPill():pendingPill()}</div></div>
+      </div>
+      <div style="margin-top:18px;display:flex;gap:10px;flex-wrap:wrap">
+        ${acc?'':payBtn('acceptance','Acceptance Fee')}
+        ${acc&&!sch?payBtn('school_fee','School Fees'):''}
+        ${acc&&sch?'<span class="status-pill status-paid">All payments complete ✓</span>':''}
+      </div>
+    </section>
+    <section class="panel">
+      <h2>Admission Documents</h2>
+      ${acc?`<p>All your admission documents are unlocked. Click any to print as PDF.</p>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px">
+          <button class="btn btn-green" onclick="printAdmissionLetter(Auth.current())">🎓 Admission Letter</button>
+          <button class="btn btn-ghost" onclick="printAcceptanceLetter(Auth.current())">✍️ Acceptance Letter</button>
+          <button class="btn btn-ghost" onclick="printGuarantorForm(Auth.current())">🤝 Guarantor Form</button>
+          <button class="btn btn-ghost" onclick="printPaymentList(Auth.current())">💳 Payment List</button>
+          <button class="btn btn-ghost" onclick="printBioData(Auth.current(), DB.biodata[Auth.current().id]||{})">📋 Bio Data</button>
+        </div>`
+        :'<p class="sub">Pay the acceptance fee (₦30,000) to unlock your admission letter, acceptance letter, guarantor form and payment list.</p>'}
+    </section>
+    
+    <section class="panel"><h2>Payment History</h2>
+      <table class="tbl"><thead><tr><th>Date</th><th>Description</th><th>Amount</th><th>Status</th></tr></thead>
+      <tbody>${userPayments(me.id).map(p=>`<tr><td>${new Date(p.date).toLocaleString()}</td><td>${p.label}</td><td>₦${p.amount.toLocaleString()}</td><td><span class="status-pill status-${p.status==='paid'?'paid':'fail'}">${p.status.toUpperCase()}</span></td></tr>`).join('')||'<tr><td colspan="4" style="text-align:center;color:var(--muted);padding:24px">No payments yet.</td></tr>'}</tbody></table>
+    </section>
+    ${quickLinks()}`;
+}
+
+function renderReturning(main,side){
+  const tabs = ["dashboard","profile","checklist","fees"];
+  const active = (location.hash.replace("#","")||"dashboard");
+  side.innerHTML = tabs.map(x=>`<a class="${x===active?"active":""}" href="#${x}" onclick="setTimeout(()=>render(),0)">${({dashboard:"🏠 Dashboard",profile:"👤 Profile",checklist:"✅ My Checklist",fees:"💰 School Fees"})[x]}</a>`).join("");
+  if(active==="profile") return renderProfile(main);
+  if(active==="checklist") return renderChecklist(main);
+  if(active==="fees") { location.href="fees.html"; return; }
+  return renderReturningHome(main);
+}
+function renderProfile(main){
+  const bio = DB.biodata[me.id] || {};
+  const photo = (function(){ try{ return _resolveImg(bio.passport||me.profile?.passport)||""; }catch(e){return "";} })();
+  main.innerHTML = `
+    <section class="panel">
+      <h2>My Profile</h2>
+      <div style="display:flex;gap:20px;align-items:flex-start;flex-wrap:wrap;margin-top:14px">
+        <div style="text-align:center">
+          ${photo?`<img src="${photo}" style="width:140px;height:160px;object-fit:cover;border:2px solid #15532a;border-radius:8px"/>`
+                 :`<div style="width:140px;height:160px;background:#eee;border-radius:8px;display:flex;align-items:center;justify-content:center;color:#888">PHOTO</div>`}
+          <p class="sub" style="margin:8px 0 0;color:#666">Update on Bio-Data page</p>
+        </div>
+        <div style="flex:1;min-width:280px">
+          <div class="kv">
+            <div class="item"><div class="k">Full Name</div><div class="v">${me.name}</div></div>
+            <div class="item"><div class="k">Gender</div><div class="v">${(me.gender||me.profile?.gender||bio.sex||"—")}</div></div>
+            <div class="item"><div class="k">Email</div><div class="v">${me.email}</div></div>
+            <div class="item"><div class="k">Phone</div><div class="v">${bio.phone||me.profile?.phone||"—"}</div></div>
+            <div class="item"><div class="k">Matric No</div><div class="v">${me.matric||"— pending"}</div></div>
+            <div class="item"><div class="k">${me.profile?.jamb?"JAMB Reg":"Application No"}</div><div class="v">${me.profile?.jamb||me.profile?.appNo||"—"}</div></div>
+            <div class="item"><div class="k">Department</div><div class="v">${me.course||"—"}</div></div>
+            <div class="item"><div class="k">Level</div><div class="v">${me.level||"—"}</div></div>
+            <div class="item"><div class="k">Programme</div><div class="v">${/hnd/i.test(me.level||"")?"HND":"ND"}</div></div>
+          </div>
+          <div style="margin-top:14px;display:flex;gap:10px;flex-wrap:wrap">
+            <a class="btn btn-green" href="bio-data.html">📝 Update Bio-Data / Upload Photo</a>
+            <button class="btn btn-ghost" onclick="updatePhoneEmail()">📞 Update Phone / Email</button>
+          </div>
+        </div>
+      </div>
+    </section>`;
+}
+window.updatePhoneEmail = ()=>{
+  const phone = prompt("New phone number:", (DB.biodata[me.id]||{}).phone || me.profile?.phone || "");
+  if(phone===null) return;
+  const all = DB.biodata; all[me.id] = {...(all[me.id]||{}), phone}; DB.biodata = all;
+  toast("Phone updated.");
+};
+function renderChecklist(main){
+  const bio = DB.biodata[me.id]; const hasBio = bio && Object.keys(bio).length>3;
+  const sch = DB.invoices.some(i=>i.userId===me.id && /school fee/i.test(i.label) && i.status==="paid") || hasPaid(me.id,"school_fee");
+  const items = [
+    {k:"Update Bio Data + Upload Passport",  d:hasBio, link:"bio-data.html"},
+    {k:"Upload O'Level Result",       d:!!(bio&&bio.docOlevel), link:"bio-data.html"},
+    {k:"Pay School Fee",              d:sch, link:"fees.html"},
+    {k:"Print Admission Letter",      d:true, link:"#dashboard"},
+  ];
+  const done = items.filter(x=>x.d).length;
+  const pct = Math.round(done*100/items.length);
+  main.innerHTML = `
+    <section class="panel">
+      <h2>My Registration Checklist</h2>
+      <div class="sub">${done} of ${items.length} steps completed.</div>
+      <div style="background:#eee;border-radius:8px;height:14px;overflow:hidden;margin:10px 0 16px">
+        <div style="background:#15532a;height:100%;width:${pct}%;transition:width .4s"></div>
+      </div>
+      <ul style="list-style:none;padding:0">
+        ${items.map(x=>`<li style="display:flex;justify-content:space-between;align-items:center;padding:10px;border-bottom:1px solid var(--border)">
+          <span>${x.d?"✅":"⬜"} ${x.k}</span>
+          ${x.d?'<span class="status-pill status-paid">DONE</span>':`<a class="btn btn-ghost" href="${x.link}" style="padding:4px 12px;font-size:12px">Open →</a>`}
+        </li>`).join("")}
+      </ul>
+    </section>`;
+}
+function renderManageCourses(main){
+  const sch = DB.invoices.some(i=>i.userId===me.id && /school fee/i.test(i.label) && i.status==="paid")
+           || hasPaid(me.id,"school_fee");
+  if(!sch){
+    main.innerHTML = `<section class="panel"><h2>Manage Courses</h2>
+      <p class="sub">Course registration is locked until you pay your <strong>School Fees</strong>.</p>
+      <a class="btn btn-green" href="fees.html">Go to Fees →</a></section>`;
+    return;
+  }
+  const all = (DB.courses||[]).filter(c=>c.open && (!me.level || c.level===me.level));
+  const myReg = (DB.registrations||[]).find(r=>r.userId===me.id && r.session===DB.settings.session) || {courseIds:[]};
+  const totalUnits = all.filter(c=>myReg.courseIds.includes(c.id)).reduce((s,c)=>s+c.units,0);
+  main.innerHTML = `
+    <section class="panel">
+      <h2>Available Courses — ${me.level||"—"}</h2>
+      <form id="crsF">
+      <table class="tbl"><thead><tr><th></th><th>Code</th><th>Title</th><th>Units</th><th>Semester</th></tr></thead>
+      <tbody>${all.map(c=>`<tr>
+        <td><input type="checkbox" name="cid" value="${c.id}" ${myReg.courseIds.includes(c.id)?"checked":""}/></td>
+        <td>${c.code}</td><td>${c.title}</td><td>${c.units}</td><td>${c.semester}</td>
+      </tr>`).join("")||'<tr><td colspan="5" style="text-align:center;padding:20px;color:#888">No courses open for your level.</td></tr>'}</tbody></table>
+      <div style="margin-top:14px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px">
+        <div>Total Units: <strong>${totalUnits}</strong></div>
+        <div style="display:flex;gap:8px">
+          <button class="btn btn-green" type="submit">Save Registration</button>
+          <button class="btn btn-ghost" type="button" onclick="(function(){const r=(DB.registrations||[]).find(r=>r.userId===me.id&&r.session===DB.settings.session); if(!r){toast('Save first.');return;} const cs=r.courseIds.map(id=>DB.courses.find(c=>c.id===id)).filter(Boolean); printCourseForm(me, cs);})()">🖨 Print Course Form</button>
+        </div>
+      </div>
+      </form>
+    </section>`;
+  document.getElementById("crsF").onsubmit = (e)=>{
+    e.preventDefault();
+    const ids = [...new FormData(e.target).getAll("cid")];
+    const regs = DB.registrations.filter(r=>!(r.userId===me.id && r.session===DB.settings.session));
+    regs.push({id:"r_"+Date.now(), userId:me.id, session:DB.settings.session, courseIds:ids, at:Date.now()});
+    DB.registrations = regs;
+    toast("Courses saved.");
+    render();
+  };
+}
+function renderReturningHome(main){
+  const bio = DB.biodata[me.id]||{};
+  const photo = _resolveImg(bio.passport||me.profile?.passport);
+  const info = paymentListFor(me);
+  const _s = DB.settings;
+  const semKey = info.isPerSemester
+    ? ("semester_fee_"+(_s.session||"").replace(/\W+/g,"_")+"_"+((bio.semester||"HARMATTAN").toLowerCase()))
+    : "school_fee";
+  const sch = hasPaid(me.id, semKey);
+  const feeLabel = info.isPerSemester ? "Semester Fees" : "School Fees";
+  const hasReg = (DB.registrations||[]).some(r=>r.userId===me.id && r.session===_s.session);
+  main.innerHTML = `
+    ${lateFeeNoticeHTML(me)}
+    <section class="panel">
+      <h2>Welcome back, ${me.name.split(" ")[0]} 👋</h2>
+      <div style="display:flex;gap:16px;align-items:center;flex-wrap:wrap;margin-top:10px">
+        ${photo?`<img src="${photo}" style="width:80px;height:90px;object-fit:cover;border:1px solid #15532a;border-radius:8px"/>`:""}
+        <div>
+          <div class="sub">Matric: <strong>${me.matric||"— pending"}</strong></div>
+          <div class="sub">Department: <strong>${me.course||"—"}</strong> · Level: <strong>${me.level||"—"}</strong></div>
+        </div>
+      </div>
+      <div class="kv" style="margin-top:14px">
+        <div class="item"><div class="k">Session</div><div class="v">${_s.session}</div></div>
+        <div class="item"><div class="k">Semester</div><div class="v">${(bio.semester||"HARMATTAN").toUpperCase()}</div></div>
+        <div class="item"><div class="k">${feeLabel}</div><div class="v">₦${info.total.toLocaleString()} ${sch?paidPill():pendingPill()}</div></div>
+        <div class="item"><div class="k">Programme</div><div class="v">${/hnd/i.test(me.level||"")?"HND":"ND"}</div></div>
+      </div>
+      <div style="margin-top:8px;padding:10px 12px;background:#f5f9f6;border-left:3px solid #15532a;border-radius:6px;font-size:13px">
+        <strong>${feeLabel} for this semester:</strong>
+        ${info.fees.map(f=>`<div>• ${f[0]} — ₦${f[1].toLocaleString()}</div>`).join("")}
+      </div>
+      <div style="margin-top:18px;display:flex;gap:10px;flex-wrap:wrap">
+        ${sch
+          ? `<span class="status-pill status-paid">${feeLabel} paid ✓</span>`
+          : `<button class="btn btn-green" onclick="openSchoolFeePopup(Auth.current())">💰 Pay ${feeLabel} (₦${info.total.toLocaleString()})</button>`}
+        <a class="btn btn-ghost" href="bio-data.html">📝 Update Bio-Data</a>
+        <a class="btn btn-ghost" href="#checklist" onclick="setTimeout(()=>render(),0)">✅ Complete Registration</a>
+      </div>
+    </section>
+
+    <section class="panel">
+      <h2>Course Registration</h2>
+      <p>Pick your courses for <strong>${(bio.semester||"HARMATTAN").toUpperCase()}</strong> semester (${_s.session}), save, then print your course form.</p>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px">
+        <a class="btn btn-green" href="courses.html">📚 Register / Update Courses</a>
+        <button class="btn btn-ghost" type="button" onclick="(function(){const r=(DB.registrations||[]).find(r=>r.userId===me.id&&r.session===DB.settings.session); if(!r||!r.courseIds||!r.courseIds.length){toast('Register your courses first.');return;} const cs=r.courseIds.map(id=>DB.courses.find(c=>c.id===id)).filter(Boolean); printCourseForm(me, cs);})()">🖨 Print Course Form</button>
+        ${hasReg?'<span class="status-pill status-paid">Courses registered ✓</span>':'<span class="status-pill status-pending">No courses registered yet</span>'}
+      </div>
+    </section>
+
+    <section class="panel">
+      <h2>Print Documents</h2>
+      <p>Your documents are unlocked. Click any to print as PDF.</p>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px">
+        <button class="btn btn-green" onclick="printAdmissionLetter(Auth.current())">🎓 Admission Letter</button>
+        <button class="btn btn-ghost" onclick="printAcceptanceLetter(Auth.current())">✍️ Acceptance Letter</button>
+        <button class="btn btn-ghost" onclick="printGuarantorForm(Auth.current())">🤝 Guarantor Form</button>
+        <button class="btn btn-ghost" onclick="printPaymentList(Auth.current())">💳 Payment List</button>
+        <button class="btn btn-ghost" onclick="printBioData(Auth.current(), DB.biodata[Auth.current().id]||{})">📋 Bio Data</button>
+      </div>
+    </section>
+    <section class="panel"><h2>Notice Board</h2>
+      ${(DB.notices||[]).length?DB.notices.slice(0,5).map(n=>`<div style="padding:10px 0;border-bottom:1px solid var(--border)"><strong>${n.title}</strong><div style="color:var(--muted);font-size:12px">${new Date(n.at).toLocaleDateString()}</div><p style="margin:6px 0 0">${n.body}</p></div>`).join(""):'<p class="sub">No notices yet.</p>'}
+    </section>
+    <section class="panel"><h2>Payment History</h2>
+      <table class="tbl"><thead><tr><th>Date</th><th>Description</th><th>Amount</th><th>Status</th></tr></thead>
+      <tbody>${userPayments(me.id).map(p=>`<tr><td>${new Date(p.date).toLocaleString()}</td><td>${p.label}</td><td>₦${p.amount.toLocaleString()}</td><td><span class="status-pill status-${p.status==='paid'?'paid':p.status==='pending'?'pending':'fail'}">${p.status.toUpperCase()}</span></td></tr>`).join('')||'<tr><td colspan="4" style="text-align:center;color:var(--muted);padding:24px">No payments yet.</td></tr>'}</tbody></table>
+    </section>`;
+}
+
+function renderStaff(main,side){
+  side.innerHTML = `<a class="active" href="#">Overview</a>`;
+  const users = DB.users.filter(u=>u.role!=='admin');
+  main.innerHTML = `
+    <section class="panel">
+      <h2>Staff Portal</h2>
+      <div class="sub">View student roster and recent activity.</div>
+      <div class="kv">
+        <div class="item"><div class="k">Total Students</div><div class="v">${users.length}</div></div>
+        <div class="item"><div class="k">Applications</div><div class="v">${DB.applications.length}</div></div>
+      </div>
+    </section>
+    <section class="panel"><h2>Student Roster</h2>
+      <table class="tbl"><thead><tr><th>Name</th><th>Email</th><th>Role</th><th>Matric</th></tr></thead>
+      <tbody>${users.map(u=>`<tr><td>${u.name}</td><td>${u.email}</td><td>${u.role}</td><td>${u.matric||'—'}</td></tr>`).join('')||'<tr><td colspan="4" style="text-align:center;color:var(--muted);padding:24px">No students yet.</td></tr>'}</tbody></table>
+    </section>`;
+}
+
+function renderAdmin(main,side){
+  side.innerHTML = `<a class="active" href="#">Admin</a><a href="#tools">Tools</a>`;
+  const users = DB.users; const pays = DB.payments; const apps = DB.applications;
+  const totalRevenue = pays.filter(p=>p.status==='paid').reduce((s,p)=>s+p.amount,0);
+  main.innerHTML = `
+    <section class="panel">
+      <h2>Admin Console</h2>
+      <div class="sub">Full system overview.</div>
+      <div class="kv">
+        <div class="item"><div class="k">Users</div><div class="v">${users.length}</div></div>
+        <div class="item"><div class="k">Applications</div><div class="v">${apps.length}</div></div>
+        <div class="item"><div class="k">Successful Payments</div><div class="v">${pays.filter(p=>p.status==='paid').length}</div></div>
+        <div class="item"><div class="k">Total Revenue</div><div class="v">₦${totalRevenue.toLocaleString()}</div></div>
+      </div>
+    </section>
+
+    <section class="panel" id="tools">
+      <h2>Admin Tools</h2>
+      <div class="sub">CSV exports save to your computer. Bulk import reads a CSV with columns: <code>name,email,role,course,level,matric,password</code>.</div>
+      <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:14px">
+        <button class="btn btn-green" onclick="exportUsersCSV()">⬇ Export Students CSV</button>
+        <button class="btn btn-green" onclick="exportPaymentsCSV()">⬇ Export Payments CSV</button>
+        <button class="btn btn-green" onclick="exportApplicationsCSV()">⬇ Export Applications CSV</button>
+      </div>
+      <div style="margin-top:18px;padding-top:14px;border-top:1px solid #e5e7eb">
+        <label><strong>Bulk import students (CSV)</strong></label>
+        <input type="file" id="csvFile" accept=".csv" style="display:block;margin-top:8px"/>
+        <button class="btn btn-primary" style="margin-top:10px" onclick="(async()=>{const f=document.getElementById('csvFile').files[0];if(!f)return toast('Choose a CSV file first');const r=await bulkImportStudents(f);toast('Imported '+r.added+' • skipped '+r.skipped);setTimeout(()=>location.reload(),900);})()">Import CSV</button>
+      </div>
+    </section>
+
+    <section class="panel"><h2>All Users</h2>
+      <table class="tbl"><thead><tr><th>Name</th><th>Email</th><th>Role</th><th>Matric</th><th>Joined</th><th></th></tr></thead>
+      <tbody>${users.map(u=>`<tr><td>${u.name}</td><td>${u.email}</td><td>${u.role}</td><td style="font-family:monospace;font-size:12px">${u.matric||'—'}</td><td>${new Date(u.createdAt).toLocaleDateString()}</td><td>${u.role==='fresh'||u.role==='returning'?`<button class="btn btn-ghost" style="padding:4px 10px;font-size:12px" onclick='downloadAdmissionLetter(${JSON.stringify(u).replace(/'/g,"&#39;")})'>PDF</button>`:''}</td></tr>`).join('')}</tbody></table>
+    </section>
+    <section class="panel"><h2>All Payments</h2>
+      <table class="tbl"><thead><tr><th>Date</th><th>User</th><th>Description</th><th>Amount</th><th>Ref</th><th>Status</th></tr></thead>
+      <tbody>${pays.map(p=>{const u=users.find(x=>x.id===p.userId);return `<tr><td>${new Date(p.date).toLocaleString()}</td><td>${u?.name||'—'}</td><td>${p.label}</td><td>₦${p.amount.toLocaleString()}</td><td style="font-family:monospace;font-size:11px">${p.tx_ref}</td><td><span class="status-pill status-${p.status==='paid'?'paid':'fail'}">${p.status.toUpperCase()}</span></td></tr>`}).join('')||'<tr><td colspan="6" style="text-align:center;color:var(--muted);padding:24px">No payments yet.</td></tr>'}</tbody></table>
+    </section>`;
+}
+</script>
+</body></html>

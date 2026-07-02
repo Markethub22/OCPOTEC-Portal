@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>Course Registration — Ondo City Polytechnic</title>
+<link rel="icon" href="assets/logo.png"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css"/>
+</head><body>
+<header class="nav"><div class="nav-inner">
+<a class="brand" href="index.html"><img src="assets/logo.png" alt="OCPOTECH"/>
+<div><div class="b-name">ONDO CITY POLYTECHNIC <span style="font-size:10px;color:#15532a">(OCPOTECH)</span></div><div class="b-tag">STUDENT PORTAL</div></div></a>
+<nav class="nav-links"><a href="index.html">Home</a><a href="dashboard.html">Dashboard</a><a href="bio-data.html">Bio Data</a><a href="courses.html" class="active">Courses</a><a href="fees.html">Fees</a></nav>
+<div class="nav-actions" data-nav-auth></div>
+</div></header>
+
+<div class="dash" style="grid-template-columns:1fr">
+<main class="dash-main">
+<section class="panel">
+  <h2>Course Registration</h2>
+  <div class="sub" id="gate"></div>
+  <div id="wrap" style="display:none">
+    <table class="tbl" id="tbl">
+      <thead><tr><th></th><th>Code</th><th>Title</th><th>Units</th><th>Dept</th><th>Level</th><th>Semester</th></tr></thead>
+      <tbody></tbody>
+    </table>
+    <div style="margin-top:18px;display:flex;gap:10px;flex-wrap:wrap">
+      <button class="btn btn-green" id="saveBtn">Save Registration</button>
+      <button class="btn btn-ghost" id="printBtn">🖨 Print Course Form</button>
+    </div>
+  </div>
+</section>
+</main></div>
+
+<script src="app.js"></script><script src="script.js"></script>
+<script>
+const me = Auth.require();
+const gate = document.getElementById("gate");
+const wrap = document.getElementById("wrap");
+if(me){
+  // Course registration is UNLOCKED for all signed-in students
+  // (Full-Time, Part-Time and Returning). Admin uploads the courses; each
+  // student picks their courses and prints their Course Registration Form.
+  gate.innerHTML = `<span class="status-pill status-paid">Open</span> &nbsp; Session ${DB.settings.session}`;
+  wrap.style.display="block";
+  const open = DB.courses.filter(c=>c.open);
+  const myReg = DB.registrations.find(r=>r.userId===me.id && r.session===DB.settings.session)?.courseIds || [];
+  const tbody = document.querySelector("#tbl tbody");
+  tbody.innerHTML = open.map(c=>`<tr>
+    <td><input type="checkbox" data-cid="${c.id}" ${myReg.includes(c.id)?'checked':''}/></td>
+    <td>${c.code}</td><td>${c.title}</td><td>${c.units}</td><td>${c.dept}</td><td>${c.level}</td><td>${c.semester}</td>
+  </tr>`).join("") || `<tr><td colspan="7" style="text-align:center;padding:24px;color:var(--muted)">No open courses have been uploaded by admin yet.</td></tr>`;
+
+  document.getElementById("saveBtn").onclick=()=>{
+    const ids = [...document.querySelectorAll("input[data-cid]:checked")].map(x=>x.dataset.cid);
+    const all = DB.registrations.filter(r=>!(r.userId===me.id && r.session===DB.settings.session));
+    all.push({id:"r_"+Date.now(),userId:me.id,session:DB.settings.session,courseIds:ids,at:Date.now()});
+    DB.registrations = all;
+    toast("Registration saved.");
+  };
+  document.getElementById("printBtn").onclick=()=>{
+    const ids = [...document.querySelectorAll("input[data-cid]:checked")].map(x=>x.dataset.cid);
+    const regs = open.filter(c=>ids.includes(c.id));
+    if(!regs.length) return toast("Select at least one course first.");
+    printCourseForm(me, regs);
+  };
+}
+</script>
+</body></html>

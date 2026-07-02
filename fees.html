@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>School Fees — Ondo City Polytechnic</title>
+<link rel="icon" href="assets/logo.png"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css"/>
+</head><body>
+<header class="nav"><div class="nav-inner">
+<a class="brand" href="index.html"><img src="assets/logo.png" alt="OCPOTECH"/>
+<div><div class="b-name">ONDO CITY POLYTECHNIC <span style="font-size:10px;color:#15532a">(OCPOTECH)</span></div><div class="b-tag">STUDENT PORTAL</div></div></a>
+<nav class="nav-links"><a href="index.html">Home</a><a href="dashboard.html">Dashboard</a><a href="bio-data.html">Bio Data</a><a href="courses.html">Courses</a><a href="fees.html" class="active">Fees</a></nav>
+<div class="nav-actions" data-nav-auth></div>
+</div></header>
+
+<div class="dash" style="grid-template-columns:1fr">
+<main class="dash-main">
+<section class="panel">
+  <h2>Fees & Invoices</h2>
+  <div class="sub">Pay any outstanding invoice. PAID invoices can be printed as official receipts.</div>
+
+  <h3 style="font-size:15px;margin:18px 0 6px">Available Fee Types</h3>
+  <table class="tbl" id="ftbl"><thead><tr><th>Fee</th><th>Amount</th><th>Session</th><th></th></tr></thead><tbody></tbody></table>
+
+  <h3 style="font-size:15px;margin:22px 0 6px">My Invoices</h3>
+  <table class="tbl" id="itbl"><thead><tr><th>Invoice No.</th><th>Fee</th><th>Amount</th><th>Date</th><th>Status</th><th></th></tr></thead><tbody></tbody></table>
+</section>
+</main></div>
+
+<script src="https://checkout.flutterwave.com/v3.js"></script>
+<script src="app.js"></script><script src="script.js"></script>
+<script>
+const me = Auth.require();
+function render(){
+  let fees = DB.feetypes;
+  // Returning students don't pay acceptance fee — only school fees.
+  if(me.role === "returning"){
+    fees = fees.filter(ft => !/acceptance/i.test(ft.name));
+  }
+  const ftb = document.querySelector("#ftbl tbody");
+  ftb.innerHTML = fees.map(ft=>{
+    // Library Fee and Course Form are bundled inside the School Fees payment
+    // list — do not charge them again as standalone invoices. Show the row
+    // with a reset price ("—") and no pay button.
+    const bundled = /library\s*fee|course\s*form|course\s*fee/i.test(ft.name);
+    const amountCell = bundled ? "—" : ("₦"+ft.amount.toLocaleString());
+    const actionCell = (function(){
+      if(bundled) return '<span class="sub" style="color:#666">Included in School Fees</span>';
+      const fk = /acceptance/i.test(ft.name)?"acceptance":/school/i.test(ft.name)?"school_fee":null;
+      if(fk && hasPaid(me.id,fk)) return '<span class="status-pill status-paid">PAID</span>';
+      if(fk && hasPending(me.id,fk)) return '<span class="status-pill status-pending">PENDING</span>';
+      // Enforce: late payment charge must be cleared before school fees
+      if(fk === "school_fee"){
+        const info = (typeof paymentListFor==="function") ? paymentListFor(me) : {lateCharge:0};
+        const lateOutstanding = info.lateCharge>0 && !hasPaid(me.id,"late_payment_charge");
+        if(lateOutstanding) return '<span class="sub" style="color:#b00;font-size:12px">🔒 Clear late payment charge first</span>';
+      }
+      return `<button class="btn btn-green" style="padding:6px 12px;font-size:13px" onclick='generateAndPay(${JSON.stringify(ft)})'>Pay (Bank Transfer) →</button>`;
+    })();
+    return `<tr><td>${ft.name}</td><td>${amountCell}</td><td>${ft.session}</td><td>${actionCell}</td></tr>`;
+  }).join("");
+
+  const mine = DB.invoices.filter(i=>i.userId===me.id);
+  const itb = document.querySelector("#itbl tbody");
+  itb.innerHTML = mine.map(i=>`<tr>
+    <td style="font-family:monospace;font-size:12px">${i.id}</td>
+    <td>${i.label}</td>
+    <td>₦${i.amount.toLocaleString()}</td>
+    <td>${new Date(i.createdAt).toLocaleDateString()}</td>
+    <td><span class="status-pill status-${i.status==='paid'?'paid':'pending'}">${i.status.toUpperCase()}</span></td>
+    <td>
+      ${i.status==='pending'?`<button class="btn btn-green" style="padding:6px 12px;font-size:13px" onclick='payInvoice("${i.id}")'>Pay</button>`:''}
+      <button class="btn btn-ghost" style="padding:6px 12px;font-size:13px" onclick='openInvoice("${i.id}")'>🖨 Print</button>
+    </td>
+  </tr>`).join("") || `<tr><td colspan="6" style="text-align:center;padding:24px;color:var(--muted)">No invoices yet.</td></tr>`;
+}
+function generateAndPay(ft){
+  const inv = {id:"INV-"+Date.now(), userId: me.id, label: ft.name, amount: ft.amount, session: ft.session, status:"pending", createdAt: Date.now()};
+  const all = DB.invoices; all.push(inv); DB.invoices = all;
+  payInvoice(inv.id);
+}
+function payInvoice(id){
+  const inv = DB.invoices.find(i=>i.id===id); if(!inv) return;
+  const isSchool = /school/i.test(inv.label);
+  if(isSchool){
+    const info = (typeof paymentListFor==="function") ? paymentListFor(me) : {lateCharge:0};
+    if(info.lateCharge>0 && !hasPaid(me.id,"late_payment_charge")){
+      alert("⚠ Please clear your Late Payment Charge (₦"+info.lateCharge.toLocaleString()+") before paying school fees.");
+      return;
+    }
+  }
+  pay({ feeKey: /acceptance/i.test(inv.label)?"acceptance":isSchool?"school_fee":null,
+        customAmount: inv.amount, customLabel: inv.label, invoiceId: inv.id,
+        onSuccess: ()=>{ toast("Payment successful!"); render(); } });
+}
+function openInvoice(id){ const inv = DB.invoices.find(i=>i.id===id); if(inv) printInvoice(inv, me); }
+render();
+</script>
+</body></html>

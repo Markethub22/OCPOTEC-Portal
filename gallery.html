@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>Gallery — Ondo City Polytechnic</title>
+<link rel="icon" href="assets/logo.png"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css"/>
+<style>
+.gal{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:14px}
+.gal figure{margin:0;background:#fff;border:1px solid var(--border);border-radius:12px;overflow:hidden;box-shadow:var(--shadow)}
+.gal img{width:100%;height:180px;object-fit:cover;display:block}
+.gal figcaption{padding:10px 12px;font-size:13px;color:var(--muted)}
+.anthem{background:linear-gradient(160deg,var(--green-800),var(--green-700));color:#fff;border-radius:14px;padding:24px;margin-bottom:22px}
+.anthem h2{margin:0 0 10px;color:#fff}
+.anthem audio{width:100%;margin-top:10px}
+.anthem .lyrics{white-space:pre-wrap;background:#ffffff10;padding:12px;border-radius:10px;margin-top:12px;font-size:14px;line-height:1.7}
+</style>
+</head><body>
+<header class="nav"><div class="nav-inner">
+<a class="brand" href="index.html"><img src="assets/logo.png" alt="OCPOTECH"/>
+<div><div class="b-name">ONDO CITY POLYTECHNIC <span style="font-size:10px;color:#15532a">(OCPOTECH)</span></div><div class="b-tag">STRENGTHEN THE TECHNOLOGY</div></div></a>
+<nav class="nav-links">
+<a href="index.html">Home</a><a href="about.html">About OCP</a><a href="post-utme.html">Post-UTME</a>
+<a href="undergraduate.html">Pre-students</a><a href="returning.html">Returning Students</a>
+<a href="staff.html">Staff Portal</a><a href="gallery.html" class="active">Gallery</a>
+</nav>
+<div class="nav-actions" data-nav-auth><a href="login.html" class="btn btn-ghost">Sign In</a><a href="signup.html" class="btn btn-primary">Apply Now</a><button class="menu-toggle" aria-label="Menu">☰</button></div>
+</div></header>
+
+<section class="subhero"><div class="subhero-inner">
+<span class="chip"><span class="dot"></span> School Life</span>
+<h1>OCP Gallery</h1>
+<p>Photos of our students, campus and events — plus our school anthem.</p>
+</div></section>
+
+<section class="section">
+<div id="anthemBox"></div>
+<h2 class="section-title">Photo Gallery</h2>
+<div id="gal" class="gal"></div>
+</section>
+
+<footer class="footer"><div class="footer-inner">
+<div><a class="brand" href="index.html"><img src="assets/logo.png" alt="OCPOTECH" style="width:36px;height:36px;border-radius:50%;background:#fff"/>
+<div><div class="b-name" style="color:#fff">ONDO CITY POLYTECHNIC</div><div class="b-tag">STRENGTHEN THE TECHNOLOGY</div></div></a></div>
+<div><h4>Admissions</h4><a href="post-utme.html">Post-UTME</a><a href="screening.html">Screening</a></div>
+<div><h4>Students</h4><a href="login.html">Sign In</a><a href="gallery.html">Gallery</a></div>
+<div><h4>Contact</h4><a href="mailto:registrarofocpotech@gmail.com">registrarofocpotech@gmail.com</a></div>
+</div><div class="copy"><span>© Ondo City Polytechnic.</span><span>Strengthen the Technology</span></div></footer>
+
+<script src="app.js"></script><script src="script.js"></script>
+<script>
+function render(){
+  const a = DB.anthem;
+  const audioUrl = a ? (a.audioKey ? Assets.get(a.audioKey) : a.dataUrl) : "";
+  document.getElementById("anthemBox").innerHTML = a ? `
+    <div class="anthem">
+      <h2>🎵 School Anthem</h2>
+      ${audioUrl?`<audio controls src="${audioUrl}"></audio>`:""}
+      ${a.lyrics?`<div class="lyrics">${a.lyrics}</div>`:""}
+    </div>` : "";
+  const items = DB.gallery;
+  document.getElementById("gal").innerHTML = items.length
+    ? items.map(g=>{const u=g.imgKey?Assets.get(g.imgKey):g.dataUrl;return `<figure><img src="${u||""}" alt="${g.title}"/><figcaption>${g.title||"Untitled"}</figcaption></figure>`}).join("")
+    : `<p style="color:var(--muted)">No photos uploaded yet. Admin can upload from the Admin panel.</p>`;
+}
+render();
+</script>
+</body></html>

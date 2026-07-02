@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>Pre-Admission Screening — Ondo City Polytechnic (OCPOTECH)</title>
+<link rel="icon" href="assets/logo.png"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css"/>
+</head><body>
+<header class="nav"><div class="nav-inner">
+<a class="brand" href="index.html"><img src="assets/logo.png" alt="OCPOTECH"/>
+<div><div class="b-name">ONDO CITY POLYTECHNIC</div><div class="b-tag">STRENGTHEN THE TECHNOLOGY</div></div></a>
+<nav class="nav-links">
+<a href="index.html">Home</a><a href="screening.html" class="active">Admissions</a><a href="returning.html">Student Portal</a>
+<a href="parttime.html">Part-Time</a><a href="gallery.html">Gallery</a>
+<a href="about.html">Contact</a><a href="dashboard.html">Notices</a>
+</nav>
+<div class="nav-actions" data-nav-auth><a href="login.html" class="btn btn-ghost">Sign In</a><a href="signup.html" class="btn btn-primary">Apply Now</a><button class="menu-toggle" aria-label="Menu">☰</button></div>
+</div></header>
+
+<section class="subhero"><div class="subhero-inner">
+<span class="chip"><span class="dot"></span> 2026/2027 Session</span>
+<h1>Pre-Admission Screening</h1>
+<p data-msg="screening_hero">Open to everyone — no login required. Pay the screening fee (₦3,250 Jambite / ₦7,500 Non-Jambite), fill the form, then print your Screening Slip.</p>
+</div></section>
+
+<section class="section">
+<div class="panel" style="background:#fff;border:1px solid var(--border);border-radius:14px;padding:28px;box-shadow:var(--shadow);max-width:900px;margin:0 auto">
+<h2 style="margin:0 0 6px">Screening Application Form</h2>
+<p class="sub" style="color:var(--muted);margin:0 0 18px">All fields marked <strong>*</strong> are required.</p>
+
+<form id="scrForm">
+  <div class="field-row">
+    <div><label>Full Name *</label><input name="name" required/></div>
+    <div><label>Gender *</label>
+      <select name="gender" required style="padding:12px;border:1px solid var(--border);border-radius:10px;font:inherit;width:100%">
+        <option value="">Select…</option><option>Male</option><option>Female</option>
+      </select>
+    </div>
+  </div>
+  <div class="field-row">
+    <div id="jambBox"><label>JAMB Registration No. *</label><input name="jamb" id="jambInput" required/></div>
+    <div id="jambScoreBox"><label>JAMB Score *</label><input name="jambScore" id="jambScoreInput" type="number" min="0" max="400" required placeholder="0–400"/></div>
+  </div>
+  <div class="field-row">
+    <div><label>Date of Birth *</label><input name="dob" type="date" required/></div>
+    <div><label>Phone *</label><input name="phone" required/></div>
+  </div>
+  <div class="field-row">
+    <div><label>Email *</label><input name="email" type="email" required/></div>
+    <div><label>Application Type *</label>
+      <select name="appType" id="appType" required style="padding:12px;border:1px solid var(--border);border-radius:10px;font:inherit;width:100%">
+        <option value="jambite">Jambite (₦3,250)</option>
+        <option value="nonjambite">Non-Jambite (₦7,500)</option>
+      </select>
+    </div>
+  </div>
+  <div class="field-row">
+    <div><label>Level Applying For *</label>
+      <select name="level" id="levelSel" required style="padding:12px;border:1px solid var(--border);border-radius:10px;font:inherit;width:100%">
+        <option value="">Select level…</option>
+        <option value="ND">ND — National Diploma</option>
+        <option value="HND">HND — Higher National Diploma</option>
+      </select>
+    </div>
+    <div><label>Faculty *</label>
+      <select name="faculty" id="facultySel" required style="padding:12px;border:1px solid var(--border);border-radius:10px;font:inherit;width:100%">
+        <option value="">Select Faculty…</option>
+      </select>
+    </div>
+  </div>
+  <div class="field-row">
+    <div><label>Programme of Choice *</label>
+      <select name="course" id="courseSel" required style="padding:12px;border:1px solid var(--border);border-radius:10px;font:inherit;width:100%">
+        <option value="">Pick a faculty first…</option>
+      </select>
+    </div>
+    <div><label>State of Origin *</label><input name="state" required placeholder="e.g. Ondo"/></div>
+  </div>
+  <div class="field-row">
+    <div><label>LGA *</label><input name="lga" required/></div>
+    <div></div>
+  </div>
+
+  <h3 style="margin:22px 0 4px;font-size:16px">O'Level Results</h3>
+  <div class="field-row">
+    <div><label>Examination Number</label><input name="examNo"/></div>
+    <div><label>Exam Type *</label>
+      <select name="examType" required style="padding:12px;border:1px solid var(--border);border-radius:10px;font:inherit;width:100%">
+        <option>WAEC</option><option>NECO</option><option>NABTEB</option>
+      </select>
+    </div>
+  </div>
+  <div class="field-row">
+    <div><label>Year</label><input name="examYear" placeholder="e.g. 2024"/></div>
+    <div><label>Sitting</label>
+      <select name="sitting" style="padding:12px;border:1px solid var(--border);border-radius:10px;font:inherit;width:100%">
+        <option>1st Sitting</option><option>2nd Sitting</option><option>Combined</option>
+      </select>
+    </div>
+  </div>
+  <p class="sub" style="color:var(--muted);margin:8px 0 4px">Pick up 5 relevant subjects. Enter grades under the matching sitting (A1–F9 or A/W for Awaiting). Use both columns for Combined sittings.</p>
+  <div id="subjectsBox"></div>
+
+  <h3 style="margin:22px 0 4px;font-size:16px">Next of Kin</h3>
+  <div class="field-row">
+    <div><label>Name *</label><input name="nokName" required/></div>
+    <div><label>Phone *</label><input name="nokPhone" required/></div>
+  </div>
+
+  <h3 style="margin:22px 0 4px;font-size:16px">Referee 1</h3>
+  <div class="field-row">
+    <div><label>Name</label><input name="ref1Name"/></div>
+    <div><label>Phone</label><input name="ref1Phone"/></div>
+  </div>
+  <h3 style="margin:18px 0 4px;font-size:16px">Referee 2</h3>
+  <div class="field-row">
+    <div><label>Name</label><input name="ref2Name"/></div>
+    <div><label>Phone</label><input name="ref2Phone"/></div>
+  </div>
+
+  <h3 style="margin:22px 0 4px;font-size:16px">Upload Credentials</h3>
+  <p class="sub" style="color:var(--muted);margin:0 0 8px">HND applicants must also upload their <strong>ND Result / Statement of Result</strong>.</p>
+  <div class="field-row">
+    <div><label>Birth Certificate</label><input name="docBirth" type="file" accept="image/*,application/pdf"/></div>
+    <div><label>O'Level Result</label><input name="docOlevel" type="file" accept="image/*,application/pdf"/></div>
+  </div>
+  <div class="field-row">
+    <div><label>JAMB Result</label><input name="docJamb" type="file" accept="image/*,application/pdf"/></div>
+    <div><label>Passport Photo</label><input name="passport" type="file" accept="image/*"/></div>
+  </div>
+  <div class="field-row" id="ndResultRow" style="display:none">
+    <div><label>ND Result / Statement of Result <span style="color:#b91c1c">*</span> <span class="sub" style="color:var(--muted)">(HND applicants only)</span></label><input name="docND" id="docNDInput" type="file" accept="image/*,application/pdf"/></div>
+    <div></div>
+  </div>
+
+  <div style="margin-top:24px;background:#f4f7f4;border:1px solid var(--border);border-radius:10px;padding:14px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px">
+    <div><strong>Screening Fee:</strong> <span id="feeAmt">₦3,250</span> (must be paid before submission)</div>
+    <button type="submit" class="btn btn-green" id="submitBtn">Pay & Submit →</button>
+  </div>
+</form>
+</div>
+</section>
+
+<section class="section">
+<div class="panel" style="background:#fff;border:1px solid var(--border);border-radius:14px;padding:24px;box-shadow:var(--shadow);max-width:760px;margin:0 auto">
+  <h2 style="margin:0 0 6px">Application Status Checker</h2>
+  <p class="sub" style="color:var(--muted);margin:0 0 14px">Enter your JAMB Number to check screening, payment and admission status.</p>
+  <form id="stForm" style="display:flex;gap:10px;flex-wrap:wrap">
+    <input name="jamb" placeholder="JAMB Reg. No." required style="flex:1;min-width:240px;padding:12px;border:1px solid var(--border);border-radius:10px"/>
+    <button class="btn btn-primary" type="submit">Check Status →</button>
+  </form>
+  <div id="stResult" style="margin-top:18px"></div>
+</div></section>
+
+<footer class="footer"><div class="footer-inner">
+<div><a class="brand" href="index.html"><img src="assets/logo.png" alt="OCPOTECH" style="width:36px;height:36px;border-radius:50%;background:#fff"/>
+<div><div class="b-name" style="color:#fff">ONDO CITY POLYTECHNIC</div><div class="b-tag">STRENGTHEN THE TECHNOLOGY</div></div></a></div>
+<div><h4>Admissions</h4><a href="post-utme.html">Post-UTME</a><a href="screening.html">Pre-Admission Screening</a><a href="screening.html">Apply Now</a></div>
+<div><h4>Students</h4><a href="login.html">Sign In</a><a href="returning.html">Returning</a><a href="gallery.html">Gallery</a></div>
+<div><h4>Contact</h4><a href="mailto:registrarofocpotech@gmail.com">registrarofocpotech@gmail.com</a><a href="tel:+2348066478440">08066478440, 08158941068, 08137968539</a></div>
+</div><div class="copy"><span>© Ondo City Polytechnic.</span><span>Strengthen the Technology</span></div></footer>
+
+<script src="https://checkout.flutterwave.com/v3.js"></script>
+<script src="app.js"></script>
+<script src="script.js"></script>
+<script>
+async function readFiles(form){
+  // Compress + store each upload in the Asset store and keep only a small
+  // key on the record. This keeps the screenings list tiny so MANY
+  // applicants can be saved & approved (was previously limited to ~1).
+  const files = {};
+  for(const f of ["docBirth","docOlevel","docJamb","docND","passport"]){
+    const el = form[f]; if(!el) continue;
+    const file = el.files[0];
+    if(file) files[f] = await storeImageAsset(file, f+"_"+Date.now());
+  }
+  return files;
+}
+// Populate faculty + cascade programmes
+const SUBJECTS = ["English Language","Mathematics","Civic Education","Computer Science","Physics","Chemistry","Biology","Agricultural Science","Further Mathematics","Health Science","Geography","Data Processing","Literature in English","Government","History","Christian Religious Studies (CRS)","Islamic Religious Studies (IRS)","Yoruba","Igbo","Hausa","French","Music","Fine Arts","Economics","Accounting","Commerce","Business Studies","Marketing","Technical Drawing","Food and Nutrition","Home Management","Tie and Dye"];
+const GRADES = ["","A1","B2","B3","C4","C5","C6","D7","E8","F9","A/W"];
+(function initScr(){
+  const facSel = document.getElementById("facultySel");
+  Object.keys(PROGRAMMES).forEach(f=>{ const o=document.createElement("option"); o.value=f; o.textContent=f; facSel.appendChild(o); });
+  // Show / hide ND Result upload based on level (HND only)
+  const levelSel = document.querySelector('select[name="level"]');
+  const ndRow = document.getElementById("ndResultRow");
+  const ndInput = document.getElementById("docNDInput");
+  function toggleND(){
+    const isHnd = /hnd/i.test(levelSel.value||"");
+    ndRow.style.display = isHnd ? "" : "none";
+    if(isHnd) ndInput.setAttribute("required","required"); else { ndInput.removeAttribute("required"); ndInput.value=""; }
+  }
+  levelSel.addEventListener("change", toggleND); toggleND();
+  const courseSel = document.getElementById("courseSel");
+  facSel.onchange = ()=>{
+    courseSel.innerHTML = '<option value="">Select programme…</option>';
+    (PROGRAMMES[facSel.value]||[]).forEach(p=>{ const o=document.createElement("option"); o.value=p; o.textContent=p; courseSel.appendChild(o); });
+  };
+  // Fee toggle
+  const appTypeSel = document.getElementById("appType");
+  const feeAmt = document.getElementById("feeAmt");
+  const btn = document.getElementById("submitBtn");
+  function updFee(){
+    const isJ = appTypeSel.value==="jambite";
+    feeAmt.textContent = isJ?"₦3,250":"₦7,500";
+    btn.textContent = "Pay "+feeAmt.textContent+" & Submit →";
+  }
+  const jambBox = document.getElementById('jambBox');
+  const jambScoreBox = document.getElementById('jambScoreBox');
+  const jambInput = document.getElementById('jambInput');
+  const jambScoreInput = document.getElementById('jambScoreInput');
+  function toggleJamb(){
+    const isJ = appTypeSel.value==='jambite';
+    jambBox.style.display = isJ ? '' : 'none';
+    jambScoreBox.style.display = isJ ? '' : 'none';
+    if(isJ){ jambInput.setAttribute('required','required'); jambScoreInput.setAttribute('required','required'); }
+    else { jambInput.removeAttribute('required'); jambScoreInput.removeAttribute('required'); jambInput.value=''; jambScoreInput.value=''; }
+  }
+  appTypeSel.onchange = ()=>{ updFee(); toggleJamb(); };
+  updFee(); toggleJamb();
+  // 9 subject rows with two grade columns (1st & 2nd sitting)
+  const box = document.getElementById("subjectsBox");
+  // header row
+  const head = document.createElement("div");
+  head.style.cssText = "display:grid;grid-template-columns:2fr 1fr 1fr;gap:12px;margin:6px 0 4px;font-size:12px;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:.5px";
+  head.innerHTML = `<div>Subject</div><div>Grade — 1st Sitting</div><div>Grade — 2nd Sitting</div>`;
+  box.appendChild(head);
+  for(let i=0;i<5;i++){
+    const row = document.createElement("div");
+    row.style.cssText = "display:grid;grid-template-columns:2fr 1fr 1fr;gap:12px;margin-bottom:8px";
+    row.innerHTML = `
+      <select name="subj${i}" style="padding:12px;border:1px solid var(--border);border-radius:10px;font:inherit;width:100%">
+        <option value="">Select…</option>
+        ${SUBJECTS.map(s=>`<option>${s}</option>`).join("")}
+      </select>
+      <select name="grade1_${i}" style="padding:12px;border:1px solid var(--border);border-radius:10px;font:inherit;width:100%">
+        ${GRADES.map(g=>`<option value="${g}">${g||"—"}</option>`).join("")}
+      </select>
+      <select name="grade2_${i}" style="padding:12px;border:1px solid var(--border);border-radius:10px;font:inherit;width:100%">
+        ${GRADES.map(g=>`<option value="${g}">${g||"—"}</option>`).join("")}
+      </select>`;
+    box.appendChild(row);
+  }
+})();
+
+document.getElementById("scrForm").addEventListener("submit", async (e)=>{
+  e.preventDefault();
+  const f = e.target;
+  const data = Object.fromEntries(new FormData(f));
+  ["docBirth","docOlevel","docJamb","docND","passport"].forEach(k=>delete data[k]);
+  const files = await readFiles(f);
+  // Collect O'Level subjects (with both sittings)
+  const olevel = [];
+  for(let i=0;i<5;i++){
+    const s = data["subj"+i], g1 = data["grade1_"+i], g2 = data["grade2_"+i];
+    if(s && (g1 || g2)) olevel.push({subject:s, grade: g1||g2, grade1:g1||"", grade2:g2||""});
+    delete data["subj"+i]; delete data["grade1_"+i]; delete data["grade2_"+i];
+  }
+  data.olevel = olevel;
+  // Map exam fields to the print-friendly keys too
+  data.olevelExamNo = data.examNo || "";
+  data.olevelType   = data.examType || "WAEC";
+  data.olevelYear   = data.examYear || "";
+  data.olevelSitting= data.sitting || "1st Sitting";
+  const feeKey = data.appType==="nonjambite" ? "screening_nonjambite" : "screening";
+  pay({
+    feeKey,
+    customerOverride: { email: data.email, name: data.name },
+    onSuccess: ()=>{
+      const scr = {
+        id: "SCR-"+Date.now(),
+        ...data, ...files,
+        mode:"Full-Time",
+        status: "Awaiting Admin Approval",
+        submittedAt: Date.now(),
+      };
+      const all = DB.screenings; all.push(scr); DB.screenings = all;
+      const wrap = document.querySelector(".panel");
+      wrap.innerHTML = `<h2 style="margin:0 0 6px;color:#15532a">✓ Submitted Successfully</h2>
+        <p>Your screening application has been submitted and payment received.</p>
+        <div style="background:#f4f7f4;border:1px solid var(--border);border-radius:10px;padding:14px;margin:14px 0">
+          <div><strong>Application ID:</strong> ${scr.id}</div>
+          <div><strong>Name:</strong> ${scr.name}</div>
+          ${scr.jamb?`<div><strong>JAMB No:</strong> ${scr.jamb}</div><div><strong>JAMB Score:</strong> ${scr.jambScore||"—"}</div>`:`<div><strong>Application No:</strong> ${scr.id} (Non-Jambite)</div>`}
+          <div><strong>Faculty:</strong> ${scr.faculty} — ${scr.course}</div>
+          <div><strong>Status:</strong> <span class="status-pill status-pending">${scr.status}</span></div>
+        </div>
+        <p class="sub" style="color:var(--muted)">Log in with your ${scr.jamb?"JAMB No":"Application No"} + first name (lowercase) to check status.</p>
+        <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:14px">
+          <button class="btn btn-green" onclick='printScreeningSlip(${JSON.stringify(scr).replace(/'/g,"&#39;")})'>🖨 Print Screening Slip</button>
+          <a class="btn btn-ghost" href="login.html">Go to Login →</a>
+        </div>`;
+      setTimeout(()=>{ printScreeningSlip(scr); }, 400);
+      try { startAdmissionPolling(scr.id); } catch(_){}
+    }
+  });
+});
+document.getElementById("stForm").addEventListener("submit",(e)=>{
+  e.preventDefault();
+  const jamb = e.target.jamb.value.trim().toUpperCase();
+  const scr = (DB.screenings||[]).find(s=>(s.jamb||"").toUpperCase()===jamb);
+  const box = document.getElementById("stResult");
+  if(!scr){ box.innerHTML = `<div style="background:#fff3f3;border:1px solid #f3c2c2;padding:14px;border-radius:10px">No record found. Submit the screening form above first.</div>`; return; }
+  const paidScr = (DB.payments||[]).some(p=>(p.feeKey==="screening"||p.feeKey==="parttime_form") && p.status==="paid" && p.studentName===scr.name);
+  const paidAcc = (DB.payments||[]).some(p=>p.feeKey==="acceptance" && p.status==="paid" && p.studentName===scr.name);
+  box.innerHTML = `<div style="background:#f4f7f4;border:1px solid var(--border);border-radius:12px;padding:16px">
+    <div style="display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px">
+      <div><strong>${scr.name}</strong><div class="sub" style="color:var(--muted)">JAMB: ${scr.jamb}</div></div>
+      <span class="badge badge-active">${scr.status}</span>
+    </div>
+    <ul style="margin:12px 0 0;padding-left:18px">
+      <li>Screening Payment: <strong>${paidScr?'Paid':'Pending'}</strong></li>
+      <li>Admission Status: <strong>${scr.status==='Admitted'||scr.status==='Active'?'Admitted':scr.status}</strong></li>
+      <li>Acceptance Fee: <strong>${paidAcc?'Paid':'Not Paid'}</strong></li>
+      <li>Matric No.: <strong>${scr.matric||'—'}</strong></li>
+    </ul>
+    <div style="margin-top:12px"><button class="btn btn-outline" onclick='printScreeningSlip(${JSON.stringify(scr).replace(/'/g,"&#39;")})'>Reprint Screening Slip</button></div>
+  </div>`;
+  try { startAdmissionPolling(scr.id); } catch(_){}
+});
+</script>
+</body></html>

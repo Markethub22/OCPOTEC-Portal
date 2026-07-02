@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>Create Account — Ondo City Polytechnic</title>
+<link rel="icon" href="assets/logo.png"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css"/>
+</head><body><div class="auth-shell">
+<div class="auth-side">
+<a class="brand" href="index.html" style="margin-bottom:24px"><img src="assets/logo.png" alt="OCPOTECH"/>
+<div><div class="b-name">ONDO CITY POLYTECHNIC <span style="font-size:10px;color:#15532a">(OCPOTECH)</span></div><div class="b-tag">STRENGTHEN THE TECHNOLOGY</div></div></a>
+<div><h1>Begin your journey at OCP</h1><p>Create your account to apply, register, and pay.</p></div>
+</div>
+<div class="auth-form"><div class="form-wrap">
+<h2>Create your account</h2><p class="muted">It only takes a minute.</p>
+<form id="signupForm">
+<label>Full Name</label><input name="name" required placeholder="Adeola Johnson"/>
+<label>Email</label><input name="email" type="email" required placeholder="you@example.com"/>
+<label>Password</label><input name="password" type="password" minlength="6" required placeholder="At least 6 characters"/>
+<label>I am applying as</label>
+<select name="role" id="roleSel" required style="padding:12px;border:1px solid var(--border);border-radius:10px;font:inherit;width:100%">
+  <option value="applicant">Post-UTME Applicant</option>
+  <option value="fresh">Pre-student (admitted)</option>
+  <option value="returning">Returning Student</option>
+  <option value="staff">Staff</option>
+</select>
+<div id="programmeBlock" style="display:none;margin-top:10px">
+  <label>Programme</label>
+  <select name="course" style="padding:12px;border:1px solid var(--border);border-radius:10px;font:inherit;width:100%">
+    <option>Computer Science</option><option>Accountancy</option><option>Business Admin</option>
+    <option>Mass Communication</option><option>Electrical Engineering</option>
+  </select>
+  <label style="margin-top:10px">Level</label>
+  <select name="level" style="padding:12px;border:1px solid var(--border);border-radius:10px;font:inherit;width:100%">
+    <option value="ND">National Diploma (ND)</option>
+    <option value="HND">Higher National Diploma (HND)</option>
+  </select>
+</div>
+<button class="btn btn-green" type="submit" style="width:100%;margin-top:14px">Create Account</button>
+</form>
+<p class="alt">Already have an account? <a href="login.html">Sign in</a></p>
+</div></div></div>
+<script src="app.js"></script>
+<script>
+const roleSel=document.getElementById("roleSel"), pb=document.getElementById("programmeBlock");
+const sync=()=>{pb.style.display=(roleSel.value==="returning"||roleSel.value==="fresh")?"block":"none";};
+roleSel.addEventListener("change",sync); sync();
+document.getElementById("signupForm").addEventListener("submit", async e=>{
+  e.preventDefault();
+  const f=e.target;
+  try{
+    await Auth.signup({name:f.name.value.trim(),email:f.email.value.trim(),password:f.password.value,role:f.role.value,course:f.course?.value,level:f.level?.value});
+    toast("Account created!");
+    setTimeout(()=>location.href="dashboard.html",600);
+  }catch(err){ toast(err.message); }
+});
+</script>
+<script src="script.js"></script></body></html>

@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>Sign In — Ondo City Polytechnic</title>
+<link rel="icon" href="assets/logo.png"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css"/>
+</head><body><div class="auth-shell">
+<div class="auth-side">
+<a class="brand" href="index.html" style="margin-bottom:24px"><img src="assets/logo.png" alt="OCPOTECH"/>
+<div><div class="b-name">ONDO CITY POLYTECHNIC <span style="font-size:10px;color:#15532a">(OCPOTECH)</span></div><div class="b-tag">STRENGTHEN THE TECHNOLOGY</div></div></a>
+<div><h1>Welcome back to your OCPOTECH Portal</h1><p>Access registration, payments, results and live updates.</p></div>
+
+</div>
+<div class="auth-form"><div class="form-wrap">
+<h2>Sign in to your account</h2>
+<div style="display:flex;gap:6px;margin:10px 0 14px;flex-wrap:wrap">
+  <button type="button" class="btn btn-ghost tab-btn active" data-tab="fulltime" style="flex:1;min-width:110px">Full-Time</button>
+  <button type="button" class="btn btn-ghost tab-btn" data-tab="parttime" style="flex:1;min-width:110px">Part-Time</button>
+  <button type="button" class="btn btn-ghost tab-btn" data-tab="returning" style="flex:1;min-width:110px">Returning</button>
+  <button type="button" class="btn btn-ghost tab-btn" data-tab="admin" style="flex:1;min-width:110px">Admin</button>
+</div>
+
+<form id="fulltimeForm" class="loginPane">
+  <p class="muted">Use the JAMB Reg. No. from your screening application + your first name (lowercase).</p>
+  <label>JAMB Registration No.</label><input name="jamb" required placeholder="e.g. 20261234ABC"/>
+  <label>First Name</label><input name="firstName" required placeholder="As written on screening form"/>
+  <button class="btn btn-green" type="submit" style="width:100%;margin-top:8px">Sign In →</button>
+</form>
+
+<form id="parttimeForm" class="loginPane" style="display:none">
+  <p class="muted">Part-Time students: use your Application No. (from the part-time form) + first name (lowercase).</p>
+  <label>Application No.</label><input name="appNo" required placeholder="PT-XXXXXXXXXX"/>
+  <label>First Name</label><input name="firstName" required placeholder="As written on application"/>
+  <button class="btn btn-green" type="submit" style="width:100%;margin-top:8px">Sign In →</button>
+</form>
+
+<form id="returningForm" class="loginPane" style="display:none">
+  <p class="muted">Returning students: use your Matric No. + password (default = your first name in lowercase).</p>
+  <label>Matric No.</label><input name="matric" required placeholder="e.g. OCP/2024/0123"/>
+  <label>Password</label><input name="password" type="password" required placeholder="your first name (lowercase)"/>
+  <button class="btn btn-green" type="submit" style="width:100%;margin-top:8px">Sign In →</button>
+  <p class="muted" style="margin-top:10px;font-size:13px">Trouble signing in? <a href="mailto:registrarofocpotech@gmail.com?subject=Returning%20Student%20Login%20Help">Contact admin</a> with your matric number.</p>
+</form>
+
+<form id="adminForm" class="loginPane" style="display:none">
+  <p class="muted">Administrator access.</p>
+  <label>Email / Username</label><input name="email" required placeholder="Email address"/>
+  <label>Password</label><input name="password" type="password" required placeholder="••••••••"/>
+  <button class="btn btn-green" type="submit" style="width:100%;margin-top:8px">Sign In</button>
+</form>
+
+<p class="alt"><a href="#" id="forgotLink">Forgot password?</a></p>
+<p class="alt">New applicant? <a href="screening.html">Apply for Screening →</a> or <a href="parttime.html">Apply Part-Time →</a></p>
+</div></div></div>
+<script src="app.js"></script>
+<script>
+const panes = {fulltime:"fulltimeForm", parttime:"parttimeForm", returning:"returningForm", admin:"adminForm"};
+document.querySelectorAll(".tab-btn").forEach(b=>b.onclick=()=>{
+  document.querySelectorAll(".tab-btn").forEach(x=>x.classList.remove("active"));
+  b.classList.add("active");
+  Object.values(panes).forEach(id=>document.getElementById(id).style.display="none");
+  document.getElementById(panes[b.dataset.tab]).style.display="block";
+});
+
+function routeAfterLogin(res){
+  // Returning student (matric exists) → dashboard.html.  Else → fresh-student.html
+  if(res.returning){
+    toast("Welcome back!");
+    setTimeout(()=>location.href="dashboard.html",500);
+  } else {
+    toast("Signed in. Loading your portal…");
+    setTimeout(()=>location.href="fresh-student.html?jamb="+encodeURIComponent(res.screening.jamb||res.screening.id),500);
+  }
+}
+
+document.getElementById("fulltimeForm").addEventListener("submit", e=>{
+  e.preventDefault(); const f=e.target;
+  try{ routeAfterLogin(Auth.loginStudent(f.jamb.value, f.firstName.value)); }
+  catch(err){ toast(err.message); }
+});
+document.getElementById("parttimeForm").addEventListener("submit", e=>{
+  e.preventDefault(); const f=e.target;
+  try{ routeAfterLogin(Auth.loginStudent(f.appNo.value, f.firstName.value)); }
+  catch(err){ toast(err.message); }
+});
+document.getElementById("returningForm").addEventListener("submit", async e=>{
+  e.preventDefault(); const f=e.target;
+  try{
+    const u = await Auth.loginReturning(f.matric.value, f.password.value);
+    toast("Welcome back, "+u.name.split(" ")[0]+"!");
+    setTimeout(()=>location.href="dashboard.html",500);
+  }catch(err){
+    if(/not found/i.test(err.message)) toast("Account not found. Please contact admin.");
+    else if(/wrong password/i.test(err.message)) toast("Incorrect password. Try your first name in lowercase, or contact admin.");
+    else toast(err.message);
+  }
+});
+
+document.getElementById("adminForm").addEventListener("submit", async e=>{
+  e.preventDefault(); const f=e.target;
+  try{
+    const u = await Auth.login(f.email.value.trim(), f.password.value);
+    toast("Welcome, admin!");
+    setTimeout(()=>location.href = u.role==="admin" ? "admin.html" : "dashboard.html",600);
+  }catch(err){ toast(err.message); }
+});
+document.getElementById("forgotLink").onclick = async (e)=>{
+  e.preventDefault();
+  const id = prompt("Enter your email or matric number:");
+  if(!id) return;
+  try{
+    const r = await Auth.requestPasswordReset(id);
+    const code = prompt("A reset code has been emailed to you AND the admin. Enter the code here:\n\n(Code: "+r.code+")");
+    if(!code) return;
+    const np = prompt("Enter your new password (min 6 chars):");
+    if(!np || np.length<6){ alert("Password too short."); return; }
+    await Auth.confirmPasswordReset(id, code, np);
+    alert("Password reset. You can now sign in.");
+  }catch(err){ alert(err.message); }
+};
+</script>
+<script src="script.js"></script></body></html>
